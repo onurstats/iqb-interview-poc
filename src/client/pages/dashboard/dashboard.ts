@@ -330,10 +330,6 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
       min-width: 1.5rem;
     }
 
-    .student-name {
-      flex: 1;
-    }
-
     .student-score {
       font-weight: 600;
       color: var(--mat-sys-primary);
@@ -342,21 +338,6 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
     a[mat-list-item] {
       text-decoration: none;
       color: inherit;
-    }
-
-    .result-info {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-
-    .result-student {
-      font-weight: 500;
-    }
-
-    .result-course {
-      font-size: 0.8rem;
-      color: var(--mat-sys-on-surface-variant);
     }
 
     .result-score {

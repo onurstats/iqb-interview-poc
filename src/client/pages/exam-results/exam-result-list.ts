@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ExamResultService } from '../../services/exam-result.service';
 import { ExamResultRow } from '../../models/exam-result.model';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -22,6 +23,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSnackBarModule,
   ],
   template: `
     <div class="header-row">
@@ -131,6 +133,7 @@ export class ExamResultListComponent implements OnInit {
 
   constructor(
     private examResultService: ExamResultService,
+    private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
   ) {
     this.searchSubject
@@ -150,6 +153,10 @@ export class ExamResultListComponent implements OnInit {
       next: (page) => {
         this.dataSource.data = page.content;
         this.totalElements = page.totalElements;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.snackBar.open('Failed to load exam results', 'Close', { duration: 3000 });
         this.cdr.markForCheck();
       },
     });

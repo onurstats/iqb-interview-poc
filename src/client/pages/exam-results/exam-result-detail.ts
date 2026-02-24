@@ -278,7 +278,7 @@ export class ExamResultDetailComponent implements OnInit {
 
   onCourseSearch(text: string) {
     this.courseSearchText = text;
-    const term = (typeof text === 'string' ? text : '').toLowerCase();
+    const term = text.toLowerCase();
     this.filteredCourses = this.availableCourses.filter(c =>
       c.name.toLowerCase().includes(term)
     );
