@@ -3,11 +3,11 @@ package com.iqb.interviewpoc.controller;
 import com.iqb.interviewpoc.entity.Student;
 import com.iqb.interviewpoc.repository.StudentRepository;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/students")
@@ -20,11 +20,11 @@ public class StudentController {
     }
 
     @GetMapping
-    public List<Student> getAll(@RequestParam(required = false) String search) {
+    public Page<Student> getAll(@RequestParam(required = false) String search, Pageable pageable) {
         if (search != null && !search.isBlank()) {
-            return repository.search(search.trim());
+            return repository.search(search.trim(), pageable);
         }
-        return repository.findAll();
+        return repository.findAll(pageable);
     }
 
     @GetMapping("/{id}")

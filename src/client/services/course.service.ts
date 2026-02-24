@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Course } from '../models/course.model';
+import { Page } from '../models/page.model';
 
 @Injectable({ providedIn: 'root' })
 export class CourseService {
@@ -9,8 +10,14 @@ export class CourseService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Course[]> {
-    return this.http.get<Course[]>(this.baseUrl);
+  getAll(page = 0, size = 10, search?: string): Observable<Page<Course>> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+    if (search) {
+      params = params.set('search', search);
+    }
+    return this.http.get<Page<Course>>(this.baseUrl, { params });
   }
 
   getById(id: number): Observable<Course> {

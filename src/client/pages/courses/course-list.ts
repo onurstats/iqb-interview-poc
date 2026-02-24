@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,12 +9,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CourseService } from '../../services/course.service';
 import { Course } from '../../models/course.model';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-course-list',
   imports: [
     FormsModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
@@ -27,6 +30,12 @@ import { Course } from '../../models/course.model';
         <mat-icon>add</mat-icon> Add Course
       </button>
     </div>
+
+    <mat-form-field class="search-field">
+      <mat-label>Search courses</mat-label>
+      <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearch($event)" placeholder="Course name">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
 
     <table mat-table [dataSource]="dataSource" class="mat-elevation-z1">
       <ng-container matColumnDef="name">
@@ -67,6 +76,15 @@ import { Course } from '../../models/course.model';
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
 
+    <mat-paginator
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[5, 10, 25]"
+      (page)="onPage($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+
     @if (adding) {
       <div class="add-row">
         <mat-form-field>
@@ -89,6 +107,10 @@ import { Course } from '../../models/course.model';
       align-items: center;
       margin-bottom: 1rem;
     }
+    .search-field {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
     table { width: 100%; }
     .inline-field { width: 100%; }
     .add-row {
@@ -102,6 +124,10 @@ import { Course } from '../../models/course.model';
 export class CourseListComponent implements OnInit {
   dataSource = new MatTableDataSource<Course>();
   displayedColumns = ['name', 'actions'];
+  searchTerm = '';
+  totalElements = 0;
+  pageSize = 10;
+  pageIndex = 0;
 
   editingId: number | null = null;
   editName = '';
@@ -109,24 +135,45 @@ export class CourseListComponent implements OnInit {
   adding = false;
   newName = '';
 
+  private searchSubject = new Subject<string>();
+
   constructor(
     private courseService: CourseService,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) {
+    this.searchSubject
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => {
+        this.pageIndex = 0;
+        this.loadCourses();
+      });
+  }
 
   ngOnInit() {
     this.loadCourses();
   }
 
   loadCourses() {
-    this.courseService.getAll().subscribe({
-      next: (data) => {
-        this.dataSource.data = data;
+    this.courseService.getAll(this.pageIndex, this.pageSize, this.searchTerm || undefined).subscribe({
+      next: (page) => {
+        this.dataSource.data = page.content;
+        this.totalElements = page.totalElements;
         this.cdr.markForCheck();
       },
       error: () => this.snackBar.open('Failed to load courses', 'Close', { duration: 3000 }),
     });
+  }
+
+  onSearch(term: string) {
+    this.searchTerm = term;
+    this.searchSubject.next(term);
+  }
+
+  onPage(event: PageEvent) {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadCourses();
   }
 
   startEdit(course: Course) {

@@ -1,11 +1,11 @@
 package com.iqb.interviewpoc.repository;
 
 import com.iqb.interviewpoc.entity.Student;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.util.List;
 
 public interface StudentRepository extends JpaRepository<Student, Long> {
 
@@ -14,5 +14,5 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
            "CAST(s.number AS string) LIKE CONCAT('%', :term, '%') OR " +
            "LOWER(s.email) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
            "LOWER(s.gsmNumber) LIKE LOWER(CONCAT('%', :term, '%'))")
-    List<Student> search(@Param("term") String term);
+    Page<Student> search(@Param("term") String term, Pageable pageable);
 }

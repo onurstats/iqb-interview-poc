@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,6 +20,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
     RouterLink,
     FormsModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
@@ -78,6 +80,15 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
+
+    <mat-paginator
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons>
+    </mat-paginator>
   `,
   styles: `
     .page-header {
@@ -104,6 +115,9 @@ export class StudentListComponent implements OnInit {
   dataSource = new MatTableDataSource<Student>();
   displayedColumns = ['number', 'fullName', 'email', 'gsmNumber', 'actions'];
   searchTerm = '';
+  totalElements = 0;
+  pageSize = 10;
+  pageIndex = 0;
   private searchSubject = new Subject<string>();
 
   constructor(
@@ -114,17 +128,21 @@ export class StudentListComponent implements OnInit {
   ) {
     this.searchSubject
       .pipe(debounceTime(300), distinctUntilChanged())
-      .subscribe((term) => this.loadStudents(term));
+      .subscribe((term) => {
+        this.pageIndex = 0;
+        this.loadStudents();
+      });
   }
 
   ngOnInit() {
     this.loadStudents();
   }
 
-  loadStudents(search?: string) {
-    this.studentService.getAll(search).subscribe({
-      next: (data) => {
-        this.dataSource.data = data;
+  loadStudents() {
+    this.studentService.getAll(this.pageIndex, this.pageSize, this.searchTerm || undefined).subscribe({
+      next: (page) => {
+        this.dataSource.data = page.content;
+        this.totalElements = page.totalElements;
         this.cdr.markForCheck();
       },
       error: () => this.snackBar.open('Failed to load students', 'Close', { duration: 3000 }),
@@ -136,13 +154,19 @@ export class StudentListComponent implements OnInit {
     this.searchSubject.next(term);
   }
 
+  onPage(event: PageEvent) {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadStudents();
+  }
+
   openForm(student?: Student) {
     const dialogRef = this.dialog.open(StudentFormDialogComponent, {
       width: '480px',
       data: student ? { ...student } : null,
     });
     dialogRef.afterClosed().subscribe((result) => {
-      if (result) this.loadStudents(this.searchTerm);
+      if (result) this.loadStudents();
     });
   }
 
@@ -151,7 +175,7 @@ export class StudentListComponent implements OnInit {
     this.studentService.delete(student.id!).subscribe({
       next: () => {
         this.snackBar.open('Student deleted', 'Close', { duration: 3000 });
-        this.loadStudents(this.searchTerm);
+        this.loadStudents();
       },
       error: () => this.snackBar.open('Failed to delete student', 'Close', { duration: 3000 }),
     });
