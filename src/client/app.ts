@@ -1,18 +1,30 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { MenuItem } from 'primeng/api';
-import { Menubar } from 'primeng/menubar';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Menubar],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MatSidenavModule,
+    MatToolbarModule,
+    MatListModule,
+    MatIconModule,
+    MatButtonModule,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
-  items: MenuItem[] = [
-    { label: 'Students', icon: 'pi pi-users', routerLink: '/students' },
-    { label: 'Courses', icon: 'pi pi-book', routerLink: '/courses' },
-    { label: 'Exam Scores', icon: 'pi pi-chart-bar', routerLink: '/exam-results' },
+  menuItems = [
+    { label: 'Students', icon: 'people', route: '/students' },
+    { label: 'Courses', icon: 'menu_book', route: '/courses' },
+    { label: 'Exam Scores', icon: 'bar_chart', route: '/exam-results' },
   ];
 }
