@@ -12,15 +12,23 @@ A POC web application for managing students, courses, and exam results.
 ## Project Structure
 ```
 iqb-interview-poc/
-├── backend/    # Spring Boot API
-├── frontend/   # Angular SPA
-└── docs/       # Specifications
+├── src/
+│   ├── client/          # Angular source
+│   ├── server/          # Spring Boot source
+│   │   ├── java/com/iqb/interviewpoc/
+│   │   └── resources/
+│   └── test/
+├── data/                # SQLite database (gitignored)
+├── docs/                # Specifications
+├── pom.xml              # Maven (backend)
+├── package.json         # pnpm (frontend)
+└── angular.json         # Angular config
 ```
 
 ## Database Schema
-- **Student**: id, full_name, number (integer), email, gsm_number, deleted (boolean, soft delete)
-- **Course**: id, name, deleted (boolean, soft delete)
-- **Exam_Result**: id, student_id (FK), course_id (FK), score (0-100), deleted (boolean, soft delete)
+- **Student**: id, full_name, number (integer), email, gsm_number
+- **Course**: id, name
+- **Exam_Result**: id, student_id (FK), course_id (FK), score (0-100)
 
 ## Business Rules
 - A course is **completed** for a student when they have exactly 3 scores for it
@@ -28,7 +36,6 @@ iqb-interview-poc/
 - Score range: 0-100
 - Student list must be searchable across all fields
 - Selecting a student shows **per-course** average scores of completed courses
-- All entities support **soft delete** and **hard delete**
 
 ## Design Decisions
 - `number` field = student registration number (integer)
