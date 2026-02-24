@@ -235,6 +235,15 @@ export class ExamResultDetailComponent implements OnInit {
   scoreColumns = ['course', 'score1', 'score2', 'score3', 'average', 'remove'];
   loading = true;
   saving = false;
+  private savedSnapshot = '';
+
+  get hasUnsavedChanges(): boolean {
+    return JSON.stringify(this.courseScores) !== this.savedSnapshot;
+  }
+
+  private takeSnapshot() {
+    this.savedSnapshot = JSON.stringify(this.courseScores);
+  }
 
   allCourses: Course[] = [];
   availableCourses: Course[] = [];
@@ -280,6 +289,7 @@ export class ExamResultDetailComponent implements OnInit {
         }));
         this.loading = false;
         this.updateAvailableCourses();
+        this.takeSnapshot();
         this.cdr.markForCheck();
       },
       error: () => {
@@ -343,6 +353,7 @@ export class ExamResultDetailComponent implements OnInit {
           this.courseScores = [...this.courseScores];
           this.saving = false;
           this.updateAvailableCourses();
+          this.takeSnapshot();
           this.snackBar.open('Course removed', 'Close', { duration: 3000 });
           this.cdr.markForCheck();
         },
@@ -398,6 +409,7 @@ export class ExamResultDetailComponent implements OnInit {
         }));
         this.saving = false;
         this.updateAvailableCourses();
+        this.takeSnapshot();
         this.snackBar.open('Scores saved successfully', 'Close', { duration: 3000 });
         this.cdr.markForCheck();
       },
