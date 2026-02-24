@@ -2,6 +2,10 @@ package com.iqb.interviewpoc.controller;
 
 import com.iqb.interviewpoc.entity.Course;
 import com.iqb.interviewpoc.repository.CourseRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/courses")
+@Tag(name = "Courses", description = "Course management")
 public class CourseController {
 
     private final CourseRepository repository;
@@ -20,7 +25,10 @@ public class CourseController {
     }
 
     @GetMapping
-    public Page<Course> getAll(@RequestParam(required = false) String search, Pageable pageable) {
+    @Operation(summary = "List courses", description = "Returns a paginated list of courses with optional search")
+    public Page<Course> getAll(
+            @Parameter(description = "Search by course name") @RequestParam(required = false) String search,
+            Pageable pageable) {
         if (search != null && !search.isBlank()) {
             return repository.search(search.trim(), pageable);
         }
@@ -28,6 +36,9 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get course by ID")
+    @ApiResponse(responseCode = "200", description = "Course found")
+    @ApiResponse(responseCode = "404", description = "Course not found")
     public ResponseEntity<Course> getById(@PathVariable Long id) {
         return repository.findById(id)
                 .map(ResponseEntity::ok)
@@ -35,6 +46,8 @@ public class CourseController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a course")
+    @ApiResponse(responseCode = "201", description = "Course created")
     public ResponseEntity<Course> create(@Valid @RequestBody Course course) {
         course.setId(null);
         Course saved = repository.save(course);
@@ -42,6 +55,9 @@ public class CourseController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a course")
+    @ApiResponse(responseCode = "200", description = "Course updated")
+    @ApiResponse(responseCode = "404", description = "Course not found")
     public ResponseEntity<Course> update(@PathVariable Long id, @Valid @RequestBody Course course) {
         return repository.findById(id)
                 .map(existing -> {
@@ -52,6 +68,9 @@ public class CourseController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a course")
+    @ApiResponse(responseCode = "204", description = "Course deleted")
+    @ApiResponse(responseCode = "404", description = "Course not found")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (!repository.existsById(id)) {
             return ResponseEntity.notFound().build();

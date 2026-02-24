@@ -11,6 +11,10 @@ import com.iqb.interviewpoc.entity.Student;
 import com.iqb.interviewpoc.repository.CourseRepository;
 import com.iqb.interviewpoc.repository.ExamResultRepository;
 import com.iqb.interviewpoc.repository.StudentRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +25,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/exam-results")
+@Tag(name = "Exam Results", description = "Exam score management")
 public class ExamResultController {
 
     private final ExamResultRepository examResultRepository;
@@ -36,7 +41,10 @@ public class ExamResultController {
     }
 
     @GetMapping
-    public Page<ExamResultDto> getAll(@RequestParam(required = false) String search, Pageable pageable) {
+    @Operation(summary = "List exam results", description = "Returns a paginated list of all exam results with optional search")
+    public Page<ExamResultDto> getAll(
+            @Parameter(description = "Search by student name, course name, or score") @RequestParam(required = false) String search,
+            Pageable pageable) {
         Page<ExamResult> results;
         if (search != null && !search.isBlank()) {
             results = examResultRepository.searchWithDetails(search.trim(), pageable);
@@ -55,6 +63,9 @@ public class ExamResultController {
     }
 
     @GetMapping("/student/{studentId}")
+    @Operation(summary = "Get scores for a student", description = "Returns all exam scores grouped by course for a given student")
+    @ApiResponse(responseCode = "200", description = "Scores found")
+    @ApiResponse(responseCode = "404", description = "Student not found")
     public ResponseEntity<StudentScoresDto> getStudentScores(@PathVariable Long studentId) {
         if (!studentRepository.existsById(studentId)) {
             return ResponseEntity.notFound().build();
@@ -84,6 +95,9 @@ public class ExamResultController {
     }
 
     @PutMapping("/student/{studentId}")
+    @Operation(summary = "Save scores for a student", description = "Creates, updates, or deletes exam scores for a student across multiple courses")
+    @ApiResponse(responseCode = "200", description = "Scores saved")
+    @ApiResponse(responseCode = "404", description = "Student not found")
     public ResponseEntity<StudentScoresDto> saveStudentScores(
             @PathVariable Long studentId,
             @RequestBody SaveScoresRequest request) {
