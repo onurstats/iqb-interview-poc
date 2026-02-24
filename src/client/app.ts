@@ -23,6 +23,7 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class App {
   menuItems = [
+    { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
     { label: 'Students', icon: 'people', route: '/students' },
     { label: 'Courses', icon: 'menu_book', route: '/courses' },
     { label: 'Exam Scores', icon: 'bar_chart', route: '/exam-results' },
