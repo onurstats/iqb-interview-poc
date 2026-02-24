@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -96,6 +97,7 @@ public class ExamResultController {
         return ResponseEntity.ok(new StudentScoresDto(courses));
     }
 
+    @Transactional
     @PutMapping("/student/{studentId}")
     @Operation(summary = "Save scores for a student", description = "Creates, updates, or deletes exam scores for a student across multiple courses")
     @ApiResponse(responseCode = "200", description = "Scores saved")
