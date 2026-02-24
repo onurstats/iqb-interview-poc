@@ -1,3 +1,31 @@
+-- =============================================================================
+-- IQB Interview POC - Database Schema (SQLite)
+-- =============================================================================
+--
+-- Tables:
+--   student      - Student personal information
+--   course       - Course names
+--   exam_result  - Exam scores per student/course (max 3 per pair = completed)
+--
+-- Relationships:
+--   exam_result.student_id -> student.id (CASCADE delete)
+--   exam_result.course_id  -> course.id  (CASCADE delete)
+--
+-- Constraints:
+--   student.number  - unique registration number
+--   exam_result.score - CHECK 0-100
+--
+-- Indexes:
+--   student:     number, email, full_name (search across all fields)
+--   course:      name
+--   exam_result: student_id, course_id, composite(student_id, course_id)
+--
+-- Notes:
+--   - Foreign keys enforced via PRAGMA foreign_keys = ON (per-connection)
+--   - Timestamps managed by JPA @PrePersist / @PreUpdate
+--   - All CREATE statements are idempotent (IF NOT EXISTS)
+-- =============================================================================
+
 CREATE TABLE IF NOT EXISTS student (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     full_name VARCHAR(255) NOT NULL,
