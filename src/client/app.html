@@ -1,3 +1,24 @@
-<h1>Hello World!</h1>
-<p>IQB Interview POC is running.</p>
-<router-outlet />
+<mat-sidenav-container class="app-container">
+  <mat-sidenav mode="side" opened>
+    <div class="sidebar-header">
+      <span class="logo">IQB</span>
+      <span class="logo-text">Interview POC</span>
+    </div>
+    <mat-nav-list>
+      @for (item of menuItems; track item.route) {
+        <a mat-list-item [routerLink]="item.route" routerLinkActive="active-link">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary">
+      <span>IQB Interview POC</span>
+    </mat-toolbar>
+    <main>
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
