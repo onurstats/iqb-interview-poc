@@ -33,6 +33,8 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, Long> {
     @Query("SELECT er.score FROM ExamResult er")
     List<Integer> findAllScores();
 
+    long countByStudentIdAndCourseId(Long studentId, Long courseId);
+
     List<ExamResult> findByStudentIdOrderByCourseIdAscIdAsc(Long studentId);
 
     @Query(value = "SELECT er FROM ExamResult er JOIN FETCH er.student JOIN FETCH er.course ORDER BY er.id DESC",

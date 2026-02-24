@@ -1,5 +1,6 @@
 package com.iqb.interviewpoc.controller;
 
+import com.iqb.interviewpoc.dto.ErrorResponse;
 import com.iqb.interviewpoc.dto.ExamResultDto;
 import com.iqb.interviewpoc.dto.SaveScoresRequest;
 import com.iqb.interviewpoc.dto.StudentScoresDto;
@@ -98,8 +99,9 @@ public class ExamResultController {
     @PutMapping("/student/{studentId}")
     @Operation(summary = "Save scores for a student", description = "Creates, updates, or deletes exam scores for a student across multiple courses")
     @ApiResponse(responseCode = "200", description = "Scores saved")
+    @ApiResponse(responseCode = "400", description = "Score limit exceeded")
     @ApiResponse(responseCode = "404", description = "Student not found")
-    public ResponseEntity<StudentScoresDto> saveStudentScores(
+    public ResponseEntity<?> saveStudentScores(
             @PathVariable Long studentId,
             @Valid @RequestBody SaveScoresRequest request) {
 
@@ -129,7 +131,13 @@ public class ExamResultController {
                         examResultRepository.save(er);
                     });
                 } else {
-                    // Create new
+                    // Create new — enforce max 3 scores per student-course pair
+                    long count = examResultRepository.countByStudentIdAndCourseId(studentId, entry.courseId());
+                    if (count >= 3) {
+                        return ResponseEntity.badRequest()
+                                .body(new ErrorResponse(400, "Bad Request",
+                                        "Maximum 3 scores per student-course pair"));
+                    }
                     ExamResult er = new ExamResult();
                     er.setStudent(student);
                     er.setCourse(course);
