@@ -3,12 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Course } from '../models/course.model';
 import { Page } from '../models/page.model';
+import { environment } from '../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class CourseService {
   private http = inject(HttpClient);
 
-  private readonly baseUrl = 'http://localhost:8080/api/courses';
+  private readonly baseUrl = `${environment.apiUrl}/api/courses`;
 
   getAll(page = 0, size = 10, search?: string): Observable<Page<Course>> {
     let params = new HttpParams().set('page', page).set('size', size);
