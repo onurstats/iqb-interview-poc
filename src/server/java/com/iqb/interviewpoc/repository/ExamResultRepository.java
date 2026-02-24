@@ -23,12 +23,12 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, Long> {
     @Query(value = "SELECT s.id, s.full_name, AVG(er.score) as avg_score " +
            "FROM exam_result er JOIN student s ON er.student_id = s.id " +
            "GROUP BY s.id, s.full_name ORDER BY avg_score DESC LIMIT 5", nativeQuery = true)
-    List<Object[]> findTopStudentsByAvgScore();
+    List<TopStudentProjection> findTopStudentsByAvgScore();
 
     @Query(value = "SELECT er.id, s.full_name, c.name, er.score, er.created_at " +
            "FROM exam_result er JOIN student s ON er.student_id = s.id JOIN course c ON er.course_id = c.id " +
            "ORDER BY er.created_at DESC LIMIT 5", nativeQuery = true)
-    List<Object[]> findRecentResults();
+    List<RecentResultProjection> findRecentResults();
 
     @Query("SELECT er.score FROM ExamResult er")
     List<Integer> findAllScores();
