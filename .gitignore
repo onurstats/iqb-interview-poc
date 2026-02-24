@@ -1,0 +1,30 @@
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+
+# SQLite
+data/*.db
+
+# Angular
+node_modules/
+dist/
+.angular/
+src/server/resources/static/
+out-tsc/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env

@@ -12,9 +12,17 @@ A POC web application for managing students, courses, and exam results.
 ## Project Structure
 ```
 iqb-interview-poc/
-├── backend/    # Spring Boot API
-├── frontend/   # Angular SPA
-└── docs/       # Specifications
+├── src/
+│   ├── client/          # Angular source
+│   ├── server/          # Spring Boot source
+│   │   ├── java/com/iqb/interviewpoc/
+│   │   └── resources/
+│   └── test/
+├── data/                # SQLite database (gitignored)
+├── docs/                # Specifications
+├── pom.xml              # Maven (backend)
+├── package.json         # pnpm (frontend)
+└── angular.json         # Angular config
 ```
 
 ## Database Schema
