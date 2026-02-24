@@ -46,20 +46,20 @@ public class DashboardController {
         List<TopStudentDto> topStudents = examResultRepository.findTopStudentsByAvgScore()
             .stream()
             .map(row -> new TopStudentDto(
-                ((Number) row[0]).longValue(),
-                (String) row[1],
-                Math.round(((Number) row[2]).doubleValue() * 100.0) / 100.0
+                row.getId(),
+                row.getFullName(),
+                Math.round(row.getAvgScore() * 100.0) / 100.0
             ))
             .toList();
 
         List<RecentResultDto> recentResults = examResultRepository.findRecentResults()
             .stream()
             .map(row -> new RecentResultDto(
-                ((Number) row[0]).longValue(),
-                (String) row[1],
-                (String) row[2],
-                ((Number) row[3]).intValue(),
-                row[4].toString()
+                row.getId(),
+                row.getFullName(),
+                row.getName(),
+                row.getScore(),
+                row.getCreatedAt()
             ))
             .toList();
 
