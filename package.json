@@ -12,6 +12,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "dev": "mvn spring-boot:run & ng serve --open & wait",
     "build": "ng build",
     "watch": "ng build --watch --configuration development"
   },

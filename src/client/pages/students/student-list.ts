@@ -1,7 +1,159 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { StudentService } from '../../services/student.service';
+import { Student } from '../../models/student.model';
+import { StudentFormDialogComponent } from './student-form-dialog';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-student-list',
-  template: `<h2>Students</h2><p>Student list page</p>`,
+  imports: [
+    RouterLink,
+    FormsModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatDialogModule,
+    MatSnackBarModule,
+  ],
+  template: `
+    <div class="page-header">
+      <h2>Students</h2>
+      <button mat-flat-button (click)="openForm()">
+        <mat-icon>add</mat-icon> Add Student
+      </button>
+    </div>
+
+    <mat-form-field class="search-field">
+      <mat-label>Search students</mat-label>
+      <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearch($event)" placeholder="Name, number, email, or phone">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z1">
+      <ng-container matColumnDef="number">
+        <th mat-header-cell *matHeaderCellDef>Number</th>
+        <td mat-cell *matCellDef="let s">{{ s.number }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="fullName">
+        <th mat-header-cell *matHeaderCellDef>Full Name</th>
+        <td mat-cell *matCellDef="let s">
+          <a [routerLink]="['/students', s.id]">{{ s.fullName }}</a>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let s">{{ s.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="gsmNumber">
+        <th mat-header-cell *matHeaderCellDef>Phone</th>
+        <td mat-cell *matCellDef="let s">{{ s.gsmNumber }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let s">
+          <button mat-icon-button (click)="openForm(s)" aria-label="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteStudent(s)" aria-label="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  `,
+  styles: `
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .search-field {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+    }
+    a {
+      color: var(--mat-sys-primary);
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  `,
 })
-export class StudentListComponent {}
+export class StudentListComponent implements OnInit {
+  dataSource = new MatTableDataSource<Student>();
+  displayedColumns = ['number', 'fullName', 'email', 'gsmNumber', 'actions'];
+  searchTerm = '';
+  private searchSubject = new Subject<string>();
+
+  constructor(
+    private studentService: StudentService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef,
+  ) {
+    this.searchSubject
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((term) => this.loadStudents(term));
+  }
+
+  ngOnInit() {
+    this.loadStudents();
+  }
+
+  loadStudents(search?: string) {
+    this.studentService.getAll(search).subscribe({
+      next: (data) => {
+        this.dataSource.data = data;
+        this.cdr.markForCheck();
+      },
+      error: () => this.snackBar.open('Failed to load students', 'Close', { duration: 3000 }),
+    });
+  }
+
+  onSearch(term: string) {
+    this.searchTerm = term;
+    this.searchSubject.next(term);
+  }
+
+  openForm(student?: Student) {
+    const dialogRef = this.dialog.open(StudentFormDialogComponent, {
+      width: '480px',
+      data: student ? { ...student } : null,
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) this.loadStudents(this.searchTerm);
+    });
+  }
+
+  deleteStudent(student: Student) {
+    if (!confirm(`Delete student "${student.fullName}"?`)) return;
+    this.studentService.delete(student.id!).subscribe({
+      next: () => {
+        this.snackBar.open('Student deleted', 'Close', { duration: 3000 });
+        this.loadStudents(this.searchTerm);
+      },
+      error: () => this.snackBar.open('Failed to delete student', 'Close', { duration: 3000 }),
+    });
+  }
+}
