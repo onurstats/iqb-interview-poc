@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,36 +10,29 @@ import { Student } from '../../models/student.model';
 
 @Component({
   selector: 'app-student-form-dialog',
-  imports: [
-    FormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatSnackBarModule,
-  ],
+  imports: [FormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSnackBarModule],
   template: `
     <h2 mat-dialog-title>{{ isEdit ? 'Edit' : 'Add' }} Student</h2>
     <mat-dialog-content>
       <form #studentForm="ngForm" class="form-grid">
         <mat-form-field>
           <mat-label>Full Name</mat-label>
-          <input matInput [(ngModel)]="student.fullName" name="fullName" required>
+          <input matInput [(ngModel)]="student.fullName" name="fullName" required />
         </mat-form-field>
 
         <mat-form-field>
           <mat-label>Number</mat-label>
-          <input matInput type="number" [(ngModel)]="student.number" name="number" required>
+          <input matInput type="number" [(ngModel)]="student.number" name="number" required />
         </mat-form-field>
 
         <mat-form-field>
           <mat-label>Email</mat-label>
-          <input matInput type="email" [(ngModel)]="student.email" name="email" required>
+          <input matInput type="email" [(ngModel)]="student.email" name="email" required />
         </mat-form-field>
 
         <mat-form-field>
           <mat-label>Phone (GSM)</mat-label>
-          <input matInput [(ngModel)]="student.gsmNumber" name="gsmNumber">
+          <input matInput [(ngModel)]="student.gsmNumber" name="gsmNumber" />
         </mat-form-field>
       </form>
     </mat-dialog-content>
@@ -57,15 +50,17 @@ import { Student } from '../../models/student.model';
   `,
 })
 export class StudentFormDialogComponent {
+  private dialogRef = inject<MatDialogRef<StudentFormDialogComponent>>(MatDialogRef);
+  data = inject<Student | null>(MAT_DIALOG_DATA);
+  private studentService = inject(StudentService);
+  private snackBar = inject(MatSnackBar);
+
   student: Student;
   isEdit: boolean;
 
-  constructor(
-    private dialogRef: MatDialogRef<StudentFormDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: Student | null,
-    private studentService: StudentService,
-    private snackBar: MatSnackBar,
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.isEdit = !!data;
     this.student = data ?? { fullName: '', number: 0, email: '' };
   }

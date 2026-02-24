@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -73,7 +73,7 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
         <mat-card class="stat-card">
           <mat-card-content>
             <div class="stat-icon"><mat-icon>trending_up</mat-icon></div>
-            <div class="stat-value">{{ stats.averageScore | number:'1.1-1' }}</div>
+            <div class="stat-value">{{ stats.averageScore | number: '1.1-1' }}</div>
             <div class="stat-label">Average Score</div>
           </mat-card-content>
         </mat-card>
@@ -108,27 +108,47 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
           <mat-card-content>
             <div class="dist-row">
               <span class="dist-label">81-100</span>
-              <mat-progress-bar mode="determinate" [value]="distributionPercent(stats.scoreDistribution.range81to100)" class="dist-excellent"></mat-progress-bar>
+              <mat-progress-bar
+                mode="determinate"
+                [value]="distributionPercent(stats.scoreDistribution.range81to100)"
+                class="dist-excellent"
+              ></mat-progress-bar>
               <span class="dist-count">{{ stats.scoreDistribution.range81to100 }}</span>
             </div>
             <div class="dist-row">
               <span class="dist-label">61-80</span>
-              <mat-progress-bar mode="determinate" [value]="distributionPercent(stats.scoreDistribution.range61to80)" class="dist-good"></mat-progress-bar>
+              <mat-progress-bar
+                mode="determinate"
+                [value]="distributionPercent(stats.scoreDistribution.range61to80)"
+                class="dist-good"
+              ></mat-progress-bar>
               <span class="dist-count">{{ stats.scoreDistribution.range61to80 }}</span>
             </div>
             <div class="dist-row">
               <span class="dist-label">41-60</span>
-              <mat-progress-bar mode="determinate" [value]="distributionPercent(stats.scoreDistribution.range41to60)" class="dist-average"></mat-progress-bar>
+              <mat-progress-bar
+                mode="determinate"
+                [value]="distributionPercent(stats.scoreDistribution.range41to60)"
+                class="dist-average"
+              ></mat-progress-bar>
               <span class="dist-count">{{ stats.scoreDistribution.range41to60 }}</span>
             </div>
             <div class="dist-row">
               <span class="dist-label">21-40</span>
-              <mat-progress-bar mode="determinate" [value]="distributionPercent(stats.scoreDistribution.range21to40)" class="dist-poor"></mat-progress-bar>
+              <mat-progress-bar
+                mode="determinate"
+                [value]="distributionPercent(stats.scoreDistribution.range21to40)"
+                class="dist-poor"
+              ></mat-progress-bar>
               <span class="dist-count">{{ stats.scoreDistribution.range21to40 }}</span>
             </div>
             <div class="dist-row">
               <span class="dist-label">0-20</span>
-              <mat-progress-bar mode="determinate" [value]="distributionPercent(stats.scoreDistribution.range0to20)" class="dist-fail"></mat-progress-bar>
+              <mat-progress-bar
+                mode="determinate"
+                [value]="distributionPercent(stats.scoreDistribution.range0to20)"
+                class="dist-fail"
+              ></mat-progress-bar>
               <span class="dist-count">{{ stats.scoreDistribution.range0to20 }}</span>
             </div>
           </mat-card-content>
@@ -149,7 +169,7 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
                     <span class="rank">#{{ i + 1 }}</span>
                     {{ student.fullName }}
                   </span>
-                  <span matListItemMeta class="student-score">{{ student.averageScore | number:'1.1-1' }}</span>
+                  <span matListItemMeta class="student-score">{{ student.averageScore | number: '1.1-1' }}</span>
                 </a>
                 @if (i < stats.topStudents.length - 1) {
                   <mat-divider></mat-divider>
@@ -288,8 +308,12 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
       color: var(--mat-sys-on-surface-variant);
     }
 
-    .completed { color: #4caf50; }
-    .in-progress { color: #ff9800; }
+    .completed {
+      color: #4caf50;
+    }
+    .in-progress {
+      color: #ff9800;
+    }
 
     .dist-row {
       display: flex;
@@ -317,11 +341,21 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
       border-radius: 4px;
     }
 
-    .dist-excellent ::ng-deep .mdc-linear-progress__bar-inner { border-color: #4caf50; }
-    .dist-good ::ng-deep .mdc-linear-progress__bar-inner { border-color: #8bc34a; }
-    .dist-average ::ng-deep .mdc-linear-progress__bar-inner { border-color: #ff9800; }
-    .dist-poor ::ng-deep .mdc-linear-progress__bar-inner { border-color: #ff5722; }
-    .dist-fail ::ng-deep .mdc-linear-progress__bar-inner { border-color: #f44336; }
+    .dist-excellent ::ng-deep .mdc-linear-progress__bar-inner {
+      border-color: #4caf50;
+    }
+    .dist-good ::ng-deep .mdc-linear-progress__bar-inner {
+      border-color: #8bc34a;
+    }
+    .dist-average ::ng-deep .mdc-linear-progress__bar-inner {
+      border-color: #ff9800;
+    }
+    .dist-poor ::ng-deep .mdc-linear-progress__bar-inner {
+      border-color: #ff5722;
+    }
+    .dist-fail ::ng-deep .mdc-linear-progress__bar-inner {
+      border-color: #f44336;
+    }
 
     .rank {
       font-weight: 600;
@@ -360,20 +394,27 @@ import { DashboardStats } from '../../models/dashboard-stats.model';
     }
 
     @media (max-width: 900px) {
-      .welcome-section { flex-direction: column; align-items: flex-start; }
-      .shortcuts { flex-wrap: wrap; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .detail-grid { grid-template-columns: 1fr; }
+      .welcome-section {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .shortcuts {
+        flex-wrap: wrap;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `,
 })
 export class DashboardComponent implements OnInit {
-  stats: DashboardStats | null = null;
+  private dashboardService = inject(DashboardService);
+  private cdr = inject(ChangeDetectorRef);
 
-  constructor(
-    private dashboardService: DashboardService,
-    private cdr: ChangeDetectorRef,
-  ) {}
+  stats: DashboardStats | null = null;
 
   ngOnInit() {
     this.dashboardService.getStats().subscribe({

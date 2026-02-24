@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Student } from '../models/student.model';
@@ -6,14 +6,12 @@ import { Page } from '../models/page.model';
 
 @Injectable({ providedIn: 'root' })
 export class StudentService {
+  private http = inject(HttpClient);
+
   private readonly baseUrl = 'http://localhost:8080/api/students';
 
-  constructor(private http: HttpClient) {}
-
   getAll(page = 0, size = 10, search?: string): Observable<Page<Student>> {
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+    let params = new HttpParams().set('page', page).set('size', size);
     if (search) {
       params = params.set('search', search);
     }

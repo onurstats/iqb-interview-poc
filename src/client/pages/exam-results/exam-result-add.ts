@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -33,7 +33,12 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
     <mat-form-field class="search-field">
       <mat-label>Search students</mat-label>
-      <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearch($event)" placeholder="Name, number, email, or phone">
+      <input
+        matInput
+        [ngModel]="searchTerm"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Name, number, email, or phone"
+      />
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
 
@@ -56,9 +61,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let s">
-          <button mat-flat-button (click)="selectStudent(s)">
-            <mat-icon>arrow_forward</mat-icon> Select
-          </button>
+          <button mat-flat-button (click)="selectStudent(s)"><mat-icon>arrow_forward</mat-icon> Select</button>
         </td>
       </ng-container>
 
@@ -72,7 +75,8 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       [pageIndex]="pageIndex"
       [pageSizeOptions]="[5, 10, 25]"
       (page)="onPage($event)"
-      showFirstLastButtons>
+      showFirstLastButtons
+    >
     </mat-paginator>
   `,
   styles: `
@@ -98,6 +102,10 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
   `,
 })
 export class ExamResultAddComponent implements OnInit {
+  private studentService = inject(StudentService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   dataSource = new MatTableDataSource<Student>();
   displayedColumns = ['number', 'fullName', 'email', 'actions'];
   searchTerm = '';
@@ -106,17 +114,11 @@ export class ExamResultAddComponent implements OnInit {
   pageIndex = 0;
   private searchSubject = new Subject<string>();
 
-  constructor(
-    private studentService: StudentService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {
-    this.searchSubject
-      .pipe(debounceTime(300), distinctUntilChanged())
-      .subscribe(() => {
-        this.pageIndex = 0;
-        this.loadStudents();
-      });
+  constructor() {
+    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
+      this.pageIndex = 0;
+      this.loadStudents();
+    });
   }
 
   ngOnInit() {

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -28,14 +28,17 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
   template: `
     <div class="header-row">
       <h2>Exam Results</h2>
-      <button mat-flat-button routerLink="/exam-results/add">
-        <mat-icon>add</mat-icon> Add Scores
-      </button>
+      <button mat-flat-button routerLink="/exam-results/add"><mat-icon>add</mat-icon> Add Scores</button>
     </div>
 
     <mat-form-field class="search-field">
       <mat-label>Search results</mat-label>
-      <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearch($event)" placeholder="Student, course, or score">
+      <input
+        matInput
+        [ngModel]="searchTerm"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Student, course, or score"
+      />
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
 
@@ -58,7 +61,12 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       <ng-container matColumnDef="score">
         <th mat-header-cell *matHeaderCellDef>Score</th>
         <td mat-cell *matCellDef="let row">
-          <span class="score-badge" [class.high]="row.score >= 80" [class.mid]="row.score >= 50 && row.score < 80" [class.low]="row.score < 50">
+          <span
+            class="score-badge"
+            [class.high]="row.score >= 80"
+            [class.mid]="row.score >= 50 && row.score < 80"
+            [class.low]="row.score < 50"
+          >
             {{ row.score }}
           </span>
         </td>
@@ -83,7 +91,8 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       [pageIndex]="pageIndex"
       [pageSizeOptions]="[10, 25, 50]"
       (page)="onPage($event)"
-      showFirstLastButtons>
+      showFirstLastButtons
+    >
     </mat-paginator>
   `,
   styles: `
@@ -123,6 +132,10 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
   `,
 })
 export class ExamResultListComponent implements OnInit {
+  private examResultService = inject(ExamResultService);
+  private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
+
   dataSource = new MatTableDataSource<ExamResultRow>();
   displayedColumns = ['studentName', 'studentNumber', 'courseName', 'score', 'actions'];
   searchTerm = '';
@@ -131,17 +144,11 @@ export class ExamResultListComponent implements OnInit {
   pageIndex = 0;
   private searchSubject = new Subject<string>();
 
-  constructor(
-    private examResultService: ExamResultService,
-    private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef,
-  ) {
-    this.searchSubject
-      .pipe(debounceTime(300), distinctUntilChanged())
-      .subscribe(() => {
-        this.pageIndex = 0;
-        this.loadResults();
-      });
+  constructor() {
+    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
+      this.pageIndex = 0;
+      this.loadResults();
+    });
   }
 
   ngOnInit() {

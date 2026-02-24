@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -39,9 +39,7 @@ import { CourseScores, SaveScoresRequest } from '../../models/exam-result.model'
         </button>
         <h2>Scores for {{ student.fullName }}</h2>
         <span class="spacer"></span>
-        <button mat-flat-button (click)="saveScores()" [disabled]="saving">
-          <mat-icon>save</mat-icon> Save All
-        </button>
+        <button mat-flat-button (click)="saveScores()" [disabled]="saving"><mat-icon>save</mat-icon> Save All</button>
       </div>
 
       @if (loading) {
@@ -64,11 +62,16 @@ import { CourseScores, SaveScoresRequest } from '../../models/exam-result.model'
             <th mat-header-cell *matHeaderCellDef>Score 1</th>
             <td mat-cell *matCellDef="let row; let i = index">
               <mat-form-field class="score-input">
-                <input matInput type="number" min="0" max="100"
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  max="100"
                   [ngModel]="row.scores[0].score"
                   (ngModelChange)="onScoreChange(i, 0, $event)"
                   placeholder="-"
-                  [disabled]="saving">
+                  [disabled]="saving"
+                />
               </mat-form-field>
             </td>
           </ng-container>
@@ -77,11 +80,16 @@ import { CourseScores, SaveScoresRequest } from '../../models/exam-result.model'
             <th mat-header-cell *matHeaderCellDef>Score 2</th>
             <td mat-cell *matCellDef="let row; let i = index">
               <mat-form-field class="score-input">
-                <input matInput type="number" min="0" max="100"
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  max="100"
                   [ngModel]="row.scores[1].score"
                   (ngModelChange)="onScoreChange(i, 1, $event)"
                   placeholder="-"
-                  [disabled]="saving">
+                  [disabled]="saving"
+                />
               </mat-form-field>
             </td>
           </ng-container>
@@ -90,11 +98,16 @@ import { CourseScores, SaveScoresRequest } from '../../models/exam-result.model'
             <th mat-header-cell *matHeaderCellDef>Score 3</th>
             <td mat-cell *matCellDef="let row; let i = index">
               <mat-form-field class="score-input">
-                <input matInput type="number" min="0" max="100"
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  max="100"
                   [ngModel]="row.scores[2].score"
                   (ngModelChange)="onScoreChange(i, 2, $event)"
                   placeholder="-"
-                  [disabled]="saving">
+                  [disabled]="saving"
+                />
               </mat-form-field>
             </td>
           </ng-container>
@@ -111,8 +124,13 @@ import { CourseScores, SaveScoresRequest } from '../../models/exam-result.model'
           <ng-container matColumnDef="remove">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let row; let i = index">
-              <button mat-icon-button color="warn" (click)="removeCourse(i)" [disabled]="saving"
-                aria-label="Remove course">
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="removeCourse(i)"
+                [disabled]="saving"
+                aria-label="Remove course"
+              >
                 <mat-icon>close</mat-icon>
               </button>
             </td>
@@ -129,15 +147,19 @@ import { CourseScores, SaveScoresRequest } from '../../models/exam-result.model'
         <div class="add-course-row">
           <mat-form-field class="add-course-field">
             <mat-label>Add course</mat-label>
-            <input matInput
+            <input
+              matInput
               [ngModel]="courseSearchText"
               (ngModelChange)="onCourseSearch($event)"
               [matAutocomplete]="auto"
-              placeholder="Type to search courses...">
+              placeholder="Type to search courses..."
+            />
             <mat-icon matSuffix>add</mat-icon>
-            <mat-autocomplete #auto="matAutocomplete"
+            <mat-autocomplete
+              #auto="matAutocomplete"
               (optionSelected)="addCourse($event.option.value)"
-              [displayWith]="displayCourse">
+              [displayWith]="displayCourse"
+            >
               @for (course of filteredCourses; track course.id) {
                 <mat-option [value]="course">{{ course.name }}</mat-option>
               }
@@ -198,6 +220,14 @@ import { CourseScores, SaveScoresRequest } from '../../models/exam-result.model'
   `,
 })
 export class ExamResultDetailComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private examResultService = inject(ExamResultService);
+  private courseService = inject(CourseService);
+  private studentService = inject(StudentService);
+  private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
+
   student: Student | null = null;
   studentId!: number;
 
@@ -210,16 +240,6 @@ export class ExamResultDetailComponent implements OnInit {
   availableCourses: Course[] = [];
   filteredCourses: Course[] = [];
   courseSearchText = '';
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private examResultService: ExamResultService,
-    private courseService: CourseService,
-    private studentService: StudentService,
-    private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   ngOnInit() {
     this.studentId = Number(this.route.snapshot.paramMap.get('studentId'));
@@ -254,9 +274,9 @@ export class ExamResultDetailComponent implements OnInit {
   loadScores() {
     this.examResultService.getStudentScores(this.studentId).subscribe({
       next: (data) => {
-        this.courseScores = data.courses.map(c => ({
+        this.courseScores = data.courses.map((c) => ({
           ...c,
-          scores: c.scores.map(s => ({ ...s })),
+          scores: c.scores.map((s) => ({ ...s })),
         }));
         this.loading = false;
         this.updateAvailableCourses();
@@ -271,17 +291,15 @@ export class ExamResultDetailComponent implements OnInit {
   }
 
   updateAvailableCourses() {
-    const usedIds = new Set(this.courseScores.map(c => c.courseId));
-    this.availableCourses = this.allCourses.filter(c => !usedIds.has(c.id!));
+    const usedIds = new Set(this.courseScores.map((c) => c.courseId));
+    this.availableCourses = this.allCourses.filter((c) => !usedIds.has(c.id!));
     this.filteredCourses = [...this.availableCourses];
   }
 
   onCourseSearch(text: string) {
     this.courseSearchText = text;
     const term = text.toLowerCase();
-    this.filteredCourses = this.availableCourses.filter(c =>
-      c.name.toLowerCase().includes(term)
-    );
+    this.filteredCourses = this.availableCourses.filter((c) => c.name.toLowerCase().includes(term));
   }
 
   displayCourse(course: Course): string {
@@ -308,12 +326,12 @@ export class ExamResultDetailComponent implements OnInit {
 
   removeCourse(index: number) {
     const row = this.courseScores[index];
-    const hasScores = row.scores.some(s => s.id !== null);
+    const hasScores = row.scores.some((s) => s.id !== null);
     if (hasScores && !confirm(`Remove ${row.courseName}? Existing scores will be deleted on save.`)) {
       return;
     }
     if (hasScores) {
-      row.scores = row.scores.map(s => ({ id: s.id, score: null }));
+      row.scores = row.scores.map((s) => ({ id: s.id, score: null }));
       this.saving = true;
       this.cdr.markForCheck();
       const request: SaveScoresRequest = {
@@ -351,11 +369,11 @@ export class ExamResultDetailComponent implements OnInit {
   }
 
   isCompleted(row: CourseScores): boolean {
-    return row.scores.filter(s => s.score !== null).length === 3;
+    return row.scores.filter((s) => s.score !== null).length === 3;
   }
 
   getAverage(row: CourseScores): string {
-    const filled = row.scores.filter(s => s.score !== null);
+    const filled = row.scores.filter((s) => s.score !== null);
     if (filled.length === 0) return '-';
     const avg = filled.reduce((sum, s) => sum + s.score!, 0) / filled.length;
     return avg.toFixed(1);
@@ -366,17 +384,17 @@ export class ExamResultDetailComponent implements OnInit {
     this.cdr.markForCheck();
 
     const request: SaveScoresRequest = {
-      courses: this.courseScores.map(c => ({
+      courses: this.courseScores.map((c) => ({
         courseId: c.courseId,
-        scores: c.scores.map(s => ({ id: s.id, score: s.score })),
+        scores: c.scores.map((s) => ({ id: s.id, score: s.score })),
       })),
     };
 
     this.examResultService.saveStudentScores(this.studentId, request).subscribe({
       next: (data) => {
-        this.courseScores = data.courses.map(c => ({
+        this.courseScores = data.courses.map((c) => ({
           ...c,
-          scores: c.scores.map(s => ({ ...s })),
+          scores: c.scores.map((s) => ({ ...s })),
         }));
         this.saving = false;
         this.updateAvailableCourses();

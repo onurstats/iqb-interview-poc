@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -26,14 +26,12 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
   template: `
     <div class="page-header">
       <h2>Courses</h2>
-      <button mat-flat-button (click)="startAdd()">
-        <mat-icon>add</mat-icon> Add Course
-      </button>
+      <button mat-flat-button (click)="startAdd()"><mat-icon>add</mat-icon> Add Course</button>
     </div>
 
     <mat-form-field class="search-field">
       <mat-label>Search courses</mat-label>
-      <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearch($event)" placeholder="Course name">
+      <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearch($event)" placeholder="Course name" />
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
 
@@ -43,7 +41,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
         <td mat-cell *matCellDef="let c">
           @if (editingId === c.id) {
             <mat-form-field class="inline-field">
-              <input matInput [(ngModel)]="editName" (keyup.enter)="saveEdit(c)" (keyup.escape)="cancelEdit()">
+              <input matInput [(ngModel)]="editName" (keyup.enter)="saveEdit(c)" (keyup.escape)="cancelEdit()" />
             </mat-form-field>
           } @else {
             {{ c.name }}
@@ -82,14 +80,15 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       [pageIndex]="pageIndex"
       [pageSizeOptions]="[5, 10, 25]"
       (page)="onPage($event)"
-      showFirstLastButtons>
+      showFirstLastButtons
+    >
     </mat-paginator>
 
     @if (adding) {
       <div class="add-row">
         <mat-form-field>
           <mat-label>Course Name</mat-label>
-          <input matInput [(ngModel)]="newName" (keyup.enter)="saveNew()" (keyup.escape)="cancelAdd()">
+          <input matInput [(ngModel)]="newName" (keyup.enter)="saveNew()" (keyup.escape)="cancelAdd()" />
         </mat-form-field>
         <button mat-icon-button (click)="saveNew()" aria-label="Save">
           <mat-icon>check</mat-icon>
@@ -111,8 +110,12 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       width: 100%;
       margin-bottom: 1rem;
     }
-    table { width: 100%; }
-    .inline-field { width: 100%; }
+    table {
+      width: 100%;
+    }
+    .inline-field {
+      width: 100%;
+    }
     .add-row {
       display: flex;
       align-items: center;
@@ -122,6 +125,10 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
   `,
 })
 export class CourseListComponent implements OnInit {
+  private courseService = inject(CourseService);
+  private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
+
   dataSource = new MatTableDataSource<Course>();
   displayedColumns = ['name', 'actions'];
   searchTerm = '';
@@ -137,17 +144,11 @@ export class CourseListComponent implements OnInit {
 
   private searchSubject = new Subject<string>();
 
-  constructor(
-    private courseService: CourseService,
-    private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef,
-  ) {
-    this.searchSubject
-      .pipe(debounceTime(300), distinctUntilChanged())
-      .subscribe(() => {
-        this.pageIndex = 0;
-        this.loadCourses();
-      });
+  constructor() {
+    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
+      this.pageIndex = 0;
+      this.loadCourses();
+    });
   }
 
   ngOnInit() {

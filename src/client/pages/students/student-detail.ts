@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -25,9 +25,7 @@ import { Student } from '../../models/student.model';
   template: `
     @if (student) {
       <div class="page-header">
-        <button mat-button routerLink="/students">
-          <mat-icon>arrow_back</mat-icon> Back to list
-        </button>
+        <button mat-button routerLink="/students"><mat-icon>arrow_back</mat-icon> Back to list</button>
       </div>
 
       <mat-card>
@@ -39,19 +37,19 @@ import { Student } from '../../models/student.model';
             <form #editForm="ngForm" class="form-grid">
               <mat-form-field>
                 <mat-label>Full Name</mat-label>
-                <input matInput [(ngModel)]="draft.fullName" name="fullName" required>
+                <input matInput [(ngModel)]="draft.fullName" name="fullName" required />
               </mat-form-field>
               <mat-form-field>
                 <mat-label>Number</mat-label>
-                <input matInput type="number" [(ngModel)]="draft.number" name="number" required>
+                <input matInput type="number" [(ngModel)]="draft.number" name="number" required />
               </mat-form-field>
               <mat-form-field>
                 <mat-label>Email</mat-label>
-                <input matInput type="email" [(ngModel)]="draft.email" name="email" required>
+                <input matInput type="email" [(ngModel)]="draft.email" name="email" required />
               </mat-form-field>
               <mat-form-field>
                 <mat-label>Phone (GSM)</mat-label>
-                <input matInput [(ngModel)]="draft.gsmNumber" name="gsmNumber">
+                <input matInput [(ngModel)]="draft.gsmNumber" name="gsmNumber" />
               </mat-form-field>
             </form>
           } @else {
@@ -67,16 +65,16 @@ import { Student } from '../../models/student.model';
             <button mat-button (click)="cancelEdit()">Cancel</button>
             <button mat-flat-button (click)="saveEdit()">Save</button>
           } @else {
-            <button mat-flat-button (click)="startEdit()">
-              <mat-icon>edit</mat-icon> Edit
-            </button>
+            <button mat-flat-button (click)="startEdit()"><mat-icon>edit</mat-icon> Edit</button>
           }
         </mat-card-actions>
       </mat-card>
     }
   `,
   styles: `
-    .page-header { margin-bottom: 1rem; }
+    .page-header {
+      margin-bottom: 1rem;
+    }
     .form-grid {
       display: flex;
       flex-direction: column;
@@ -91,17 +89,15 @@ import { Student } from '../../models/student.model';
   `,
 })
 export class StudentDetailComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private studentService = inject(StudentService);
+  private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
+
   student: Student | null = null;
   draft!: Student;
   editing = false;
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private studentService: StudentService,
-    private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));

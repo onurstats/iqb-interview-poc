@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -31,14 +31,17 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
   template: `
     <div class="page-header">
       <h2>Students</h2>
-      <button mat-flat-button (click)="openForm()">
-        <mat-icon>add</mat-icon> Add Student
-      </button>
+      <button mat-flat-button (click)="openForm()"><mat-icon>add</mat-icon> Add Student</button>
     </div>
 
     <mat-form-field class="search-field">
       <mat-label>Search students</mat-label>
-      <input matInput [ngModel]="searchTerm" (ngModelChange)="onSearch($event)" placeholder="Name, number, email, or phone">
+      <input
+        matInput
+        [ngModel]="searchTerm"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Name, number, email, or phone"
+      />
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
 
@@ -87,7 +90,8 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       [pageIndex]="pageIndex"
       [pageSizeOptions]="[5, 10, 25, 50]"
       (page)="onPage($event)"
-      showFirstLastButtons>
+      showFirstLastButtons
+    >
     </mat-paginator>
   `,
   styles: `
@@ -107,11 +111,18 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
     a {
       color: var(--mat-sys-primary);
       text-decoration: none;
-      &:hover { text-decoration: underline; }
+      &:hover {
+        text-decoration: underline;
+      }
     }
   `,
 })
 export class StudentListComponent implements OnInit {
+  private studentService = inject(StudentService);
+  private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
+  private cdr = inject(ChangeDetectorRef);
+
   dataSource = new MatTableDataSource<Student>();
   displayedColumns = ['number', 'fullName', 'email', 'gsmNumber', 'actions'];
   searchTerm = '';
@@ -120,18 +131,11 @@ export class StudentListComponent implements OnInit {
   pageIndex = 0;
   private searchSubject = new Subject<string>();
 
-  constructor(
-    private studentService: StudentService,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef,
-  ) {
-    this.searchSubject
-      .pipe(debounceTime(300), distinctUntilChanged())
-      .subscribe((term) => {
-        this.pageIndex = 0;
-        this.loadStudents();
-      });
+  constructor() {
+    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
+      this.pageIndex = 0;
+      this.loadStudents();
+    });
   }
 
   ngOnInit() {
