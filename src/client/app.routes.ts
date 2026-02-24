@@ -6,6 +6,7 @@ import { CourseListComponent } from './pages/courses/course-list';
 import { ExamResultListComponent } from './pages/exam-results/exam-result-list';
 import { ExamResultAddComponent } from './pages/exam-results/exam-result-add';
 import { ExamResultDetailComponent } from './pages/exam-results/exam-result-detail';
+import { unsavedChangesGuard } from './guards/unsaved-changes.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -15,5 +16,5 @@ export const routes: Routes = [
   { path: 'courses', component: CourseListComponent },
   { path: 'exam-results', component: ExamResultListComponent },
   { path: 'exam-results/add', component: ExamResultAddComponent },
-  { path: 'exam-results/add/:studentId', component: ExamResultDetailComponent },
+  { path: 'exam-results/add/:studentId', component: ExamResultDetailComponent, canDeactivate: [unsavedChangesGuard] },
 ];
