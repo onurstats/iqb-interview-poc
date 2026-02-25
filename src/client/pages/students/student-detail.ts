@@ -110,7 +110,7 @@ import { CourseScores } from '../../models/exam-result.model';
             <th mat-header-cell *matHeaderCellDef>Average</th>
             <td mat-cell *matCellDef="let r">
               @if (r.average !== null) {
-                <mat-chip [highlighted]="true">{{ r.average | number:'1.0-1' }}</mat-chip>
+                <mat-chip [highlighted]="true">{{ r.average | number: '1.0-1' }}</mat-chip>
               } @else {
                 <span class="muted">—</span>
               }
