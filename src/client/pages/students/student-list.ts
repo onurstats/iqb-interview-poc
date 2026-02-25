@@ -78,9 +78,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
           @if (s.completedCourses?.length) {
             <mat-chip-set>
               @for (cc of s.completedCourses; track cc.courseName) {
-                <mat-chip [highlighted]="true">
-                  {{ cc.courseName }}: {{ cc.average | number:'1.0-0' }}
-                </mat-chip>
+                <mat-chip [highlighted]="true"> {{ cc.courseName }}: {{ cc.average | number: '1.0-0' }} </mat-chip>
               }
             </mat-chip-set>
           } @else {
