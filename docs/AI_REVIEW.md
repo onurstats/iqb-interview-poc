@@ -1,7 +1,8 @@
 # Engineering Review: IQB Interview POC
 
 **Reviewer:** AI Engineering Lead
-**Date:** 2026-02-24
+**Date:** 2026-02-25
+**Revision:** 3 (post CI/CD & UX hardening)
 **Submission:** Full-stack Student/Course/Exam Management Application
 **Stack:** Angular 21 + Spring Boot 3.5 + SQLite
 
@@ -9,9 +10,9 @@
 
 ## Executive Summary
 
-This is a well-structured full-stack POC that demonstrates solid engineering fundamentals. The candidate built a complete student management system with CRUD operations, exam score tracking, a statistics dashboard, and API documentation — all within a clean monorepo layout. The code is readable, the architecture is sensible, and the tooling choices are modern.
+This is a mature, well-structured full-stack POC that demonstrates strong engineering fundamentals across the entire stack. The application covers student management, course management, exam score tracking with a 3-score completion model, and a statistics dashboard — all in a clean monorepo with modern tooling. Since the previous review, significant improvements have been made: transaction safety on multi-entity writes, logging in exception handlers, type-safe native query projections, a CI pipeline, an unsaved-changes guard, and a centralized HTTP error interceptor.
 
-**Recommendation: HIRE** — The candidate shows strong full-stack capability, good architectural instincts, and attention to developer experience. Weaknesses are mostly about production-readiness concerns that are acceptable in a POC context.
+**Recommendation: STRONG HIRE** — The candidate shows strong full-stack capability, excellent architectural instincts, thorough testing, and production-readiness awareness. The ability to systematically address review feedback across multiple iterations is a strong signal for team collaboration.
 
 ---
 
@@ -38,11 +39,12 @@ This is a well-structured full-stack POC that demonstrates solid engineering fun
 - PRAGMA foreign_keys enabled per-connection via Hikari init SQL — knows SQLite quirks
 
 ### 4. API Design
-- RESTful endpoints with proper HTTP methods and status codes (201 Created, 204 No Content, 404 Not Found)
+- RESTful endpoints with proper HTTP methods and status codes (201 Created, 204 No Content, 404 Not Found, 400 Bad Request, 409 Conflict)
 - Server-side pagination with Spring Data `Pageable` on all list endpoints
 - Search/filter support on all list endpoints with case-insensitive matching
 - OpenAPI 3.1 documentation with Swagger UI — API is self-documenting
 - Clean DTOs separate internal entities from API responses (ExamResultDto, StudentScoresDto, DashboardStatsDto)
+- Structured error responses via `GlobalExceptionHandler` — no stack traces leak to clients
 
 ### 5. Frontend Quality
 - Reactive search with `Subject` + `debounceTime(300ms)` + `distinctUntilChanged()` — no excessive API calls
@@ -51,24 +53,67 @@ This is a well-structured full-stack POC that demonstrates solid engineering fun
 - Color-coded score badges (green/orange/red) — good UX attention
 - Responsive CSS grid with media queries on dashboard — mobile consideration
 - Course autocomplete with filtered available options — thoughtful UX
+- Environment-based API URLs with `fileReplacements` in production build — deployment-ready
+- **Centralized HTTP error interceptor** — snackbar notifications for 400/401/403/409/5xx; 404 passed through for component-level handling
+- **Unsaved changes guard** on score editing — prevents accidental data loss with `canDeactivate` + `confirm()` dialog
 
-### 6. Domain Modeling
+### 6. Domain Modeling & Business Rules
 - 3-score completion rule (student-course pair is "completed" when 3 scores exist) — correctly modeled
+- **Max 3 scores per student-course pair enforced at the API level** — returns 400 with clear error message
 - Score entry form handles create/update/delete in a single save operation — complex state management done well
 - Dashboard aggregations (averages, distributions, top performers) — shows data thinking
 
-### 7. Tooling & Developer Experience
+### 7. Error Handling
+- `@RestControllerAdvice` with `GlobalExceptionHandler` catches and translates all exception types:
+  - `MethodArgumentNotValidException` → 400 with field-level details
+  - `ConstraintViolationException` → 400 with property paths
+  - `DataIntegrityViolationException` → 409 with user-friendly duplicate message
+  - Generic `Exception` → 500 with safe message (no internal details)
+- Consistent `ErrorResponse` record: `{ status, error, message, timestamp }`
+- DTO-level `@Valid` / `@NotNull` on `SaveScoresRequest` — defense in depth
+- **SLF4J logging at all levels**: `warn` for validation errors, `error` for data integrity and unexpected exceptions — production-debuggable
+
+### 8. Testing
+- **42 backend tests** across 5 test classes — all passing
+- Schema validation tests (table structure, constraints, indexes, cascade deletes, idempotency)
+- Controller integration tests with `@SpringBootTest` + `MockMvc`:
+  - CRUD operations for students, courses, exam results
+  - Search and pagination
+  - Validation error responses (400)
+  - Not-found handling (404)
+  - Business rule enforcement (max 3 scores)
+  - Dashboard stats with empty and populated data
+- Separate test profile with isolated database (`iqb-test.db`) and no seed data
+
+### 9. Configuration Management
+- Spring profiles: `dev` (show-sql), `test` (separate DB, no seed data)
+- Default profile is `dev` — safe for local development
+- Frontend `environment.ts` / `environment.prod.ts` with `fileReplacements` in `angular.json`
+- Production build uses same-origin empty `apiUrl` — no hardcoded URLs in prod bundle
+
+### 10. Tooling & Developer Experience
 - ESLint with `angular-eslint` (recommended + template accessibility + stylistic rules)
 - Prettier integrated via `eslint-plugin-prettier` — formatting is a lint error, not a separate step
 - `pnpm lint`, `pnpm format`, `pnpm format:check` scripts — CI-ready
 - EditorConfig for consistent editor settings
 - OpenAPI/Swagger UI at `/swagger-ui/index.html` — instant API exploration
 
+### 11. CI/CD Pipeline
+- **GitHub Actions** with two parallel jobs (backend + frontend)
+- Backend: Java 21 setup → `mvn compile` → `mvn test` (42 tests)
+- Frontend: pnpm + Node 22 setup → `pnpm install --frozen-lockfile` → `pnpm lint` → `tsc --noEmit` → `pnpm build`
+- Triggers on push and PR to `develop` and `main` — protects both branches
+- Maven and pnpm caching for faster builds
+
+### 12. Transaction Safety
+- `@Transactional` on `saveStudentScores()` — multi-entity create/update/delete operations are atomic
+- Prevents partial state if a constraint violation occurs mid-loop
+
 ---
 
 ## Weaknesses (Concerns)
 
-### 1. No Service Layer (HIGH)
+### 1. No Service Layer (MEDIUM)
 Controllers directly inject repositories and contain all business logic. This works for a POC but is a code smell at scale:
 - Business rules (3-score max, score validation, cascade operations) live in controller methods
 - No place for shared business logic if multiple controllers need the same operations
@@ -76,83 +121,99 @@ Controllers directly inject repositories and contain all business logic. This wo
 
 **Files affected:** All controllers (`StudentController`, `CourseController`, `ExamResultController`, `DashboardController`)
 
-### 2. No Authentication or Authorization (MEDIUM)
+**Mitigated by:** The application is small enough that the controllers are readable and each has a single responsibility. Integration tests cover the business logic effectively.
+
+### 2. No Authentication or Authorization (LOW — out of scope)
 - All endpoints are publicly accessible
 - No user concept, no roles, no JWT/session handling
 - CORS allows `localhost:4200` and `localhost:8080` — appropriate for dev but no production CORS strategy
 
-**Acceptable for POC scope, but should be acknowledged.**
+**Acceptable for POC scope.**
 
-### 3. Hardcoded Base URLs in Frontend (MEDIUM)
-All services use `http://localhost:8080` as the base URL:
-- `student.service.ts` → `http://localhost:8080/api/students`
-- `course.service.ts` → `http://localhost:8080/api/courses`
-- etc.
-
-Should use `environment.ts` or Angular's `APP_BASE_HREF` / proxy config for environment-specific URLs.
-
-### 4. Insufficient Test Coverage (HIGH)
-- Only 10 database migration tests exist (`DatabaseMigrationTest`)
-- No controller/integration tests
-- No frontend unit tests (Angular schematics configured to skip test generation)
+### 3. No Frontend Tests (LOW)
+- No Angular unit tests (schematics configured to skip test generation)
 - No e2e tests
+- Backend has strong coverage (42 tests), but frontend logic (score state management, autocomplete filtering, form validation) is untested
 
-This is the biggest gap — a candidate who writes tests demonstrates engineering maturity.
+**Mitigated by:** Frontend components are mostly thin wrappers around service calls. The complex state management in `ExamResultDetailComponent` is the main area that would benefit from testing.
 
-### 5. No Global Exception Handling (MEDIUM)
-- No `@ControllerAdvice` or `@ExceptionHandler` for consistent error responses
-- If a database constraint violation occurs, the client gets a raw 500 with stack trace
-- No structured error response format (e.g., `{ error: string, message: string, status: number }`)
+### 4. `index.html` Title (COSMETIC)
+Page title is `"ClientTemp"` instead of the project name. Minor cosmetic issue.
 
-### 6. Configuration Issues (LOW)
-- `spring.jpa.show-sql=true` — should be off or profile-specific
-- `spring.sql.init.mode=always` — runs `data.sql` seed on every startup, causes test DB conflicts
-- No Spring profiles (`dev`, `prod`) for environment-specific config
+### 5. `open-in-view` Warning (LOW)
+Spring JPA `open-in-view` is enabled by default, producing a startup warning. Not harmful for this app (no lazy-load access patterns in views), but should be explicitly set to suppress the warning.
 
-### 7. No Request Body Validation on DTOs (LOW)
-- `SaveScoresRequest` record has no `@Valid` or `@NotNull` annotations
-- A malformed request body would result in unclear errors
-- Entity-level validation exists (`@Min`, `@Max`, `@NotBlank`) but DTO-level is missing
+**Fix:** Add `spring.jpa.open-in-view=false` to `application.properties`.
+
+### 6. Dashboard N+0 Query Pattern (LOW)
+`DashboardController.getStats()` makes 8 separate repository calls in a single request (count, averageScore, countCompletedPairs, countInProgressPairs, findTopStudents, findRecentResults, findAllScores, count×2). For SQLite with a small dataset this is fine, but for a production database these could be consolidated.
+
+**Mitigated by:** SQLite is in-process (no network round-trips), dataset is small, and the queries are individually simple with proper indexing.
 
 ---
 
-## Improvement Suggestions
+## Resolved Issues (from Previous Reviews)
 
-| # | Improvement | Priority | What it Demonstrates |
-|---|------------|----------|---------------------|
-| 1 | Add a service layer between controllers and repositories | High | Separation of concerns, testability |
-| 2 | Write controller integration tests with `@WebMvcTest` or `@SpringBootTest` | High | Testing discipline, confidence in changes |
-| 3 | Add `@ControllerAdvice` for global exception handling | High | Production readiness, API consistency |
-| 4 | Extract base URLs to `environment.ts` | Medium | Environment awareness, deployment readiness |
-| 5 | Add Spring profiles (`dev`, `test`, `prod`) | Medium | Configuration management |
-| 6 | Add `@Valid` annotations on request body DTOs | Medium | Defense in depth, input validation |
-| 7 | Disable `show-sql` in non-dev profiles | Low | Production hygiene |
-| 8 | Add Angular unit tests for at least services and key components | Medium | Frontend testing culture |
-| 9 | Add a CI pipeline (GitHub Actions) with lint + test + build | Medium | DevOps maturity |
-| 10 | Consider replacing SQLite with PostgreSQL for production path | Low | Scalability awareness |
-| 11 | Add loading states and empty states to all list pages | Low | UX polish |
-| 12 | Add `max 3 scores per student-course` enforcement at the API level | Medium | Business rule enforcement |
+Issues from previous reviews that have been addressed:
+
+| # | Issue | Resolved In | How |
+|---|-------|-------------|-----|
+| 1 | No global exception handling | Rev 2 | `GlobalExceptionHandler` with `ErrorResponse` record |
+| 2 | Hardcoded base URLs in frontend | Rev 2 | `environment.ts` + `environment.prod.ts` + `fileReplacements` |
+| 3 | Insufficient test coverage | Rev 2 | 42 tests: 10 schema + 32 controller integration tests |
+| 4 | No Spring profiles | Rev 2 | `dev` and `test` profiles with separate configs |
+| 5 | `show-sql` always on | Rev 2 | Moved to `application-dev.properties` only |
+| 6 | No DTO validation | Rev 2 | `@NotNull` + `@Valid` on `SaveScoresRequest` fields |
+| 7 | No max-3-scores enforcement | Rev 2 | `countByStudentIdAndCourseId()` + 400 error on violation |
+| 8 | No `@Transactional` on multi-entity writes | **Rev 3** | `@Transactional` added to `saveStudentScores()` |
+| 9 | No logging in exception handlers | **Rev 3** | SLF4J `Logger` with `warn`/`error` levels in all handlers |
+| 10 | Native SQL queries return `Object[]` | **Rev 3** | Interface-based projections (`TopStudentProjection`, `RecentResultProjection`) |
+| 11 | No CI pipeline | **Rev 3** | GitHub Actions with parallel backend + frontend jobs |
+| 12 | No unsaved-changes guard | **Rev 3** | `canDeactivate` guard on `ExamResultDetailComponent` |
+| 13 | No HTTP error interceptor | **Rev 3** | Functional `httpErrorInterceptor` with `MatSnackBar` notifications |
+
+---
+
+## Remaining Improvement Suggestions
+
+| # | Improvement | Priority | Effort |
+|---|------------|----------|--------|
+| 1 | Extract service layer between controllers and repositories | Medium | 4-5 hrs |
+| 2 | Add Angular unit tests for `ExamResultDetailComponent` | Medium | 3-4 hrs |
+| 3 | Fix `index.html` title from "ClientTemp" to project name | Low | 1 min |
+| 4 | Set `spring.jpa.open-in-view=false` to suppress warning | Low | 1 min |
+| 5 | Add auth/authorization (JWT or session-based) | Low (POC) | 8-10 hrs |
+| 6 | Add `README.md` with setup and run instructions | Low | 30 min |
 
 ---
 
 ## Score Card
 
-| Dimension | Score (1-10) | Notes |
-|-----------|:---:|-------|
-| **Architecture** | 8 | Clean monorepo, schema-first DB, proper layering (minus service layer) |
-| **Code Quality** | 8 | Readable, consistent patterns, Java records, modern Angular |
-| **Testing** | 3 | Only DB migration tests — biggest gap |
-| **API Design** | 9 | RESTful, paginated, searchable, documented with OpenAPI |
-| **Frontend** | 8 | Modern Angular 21, Material UI, reactive patterns, responsive |
-| **Database** | 9 | Well-indexed, constrained, cascade deletes, schema-first |
-| **DevOps/Tooling** | 7 | ESLint + Prettier, gitflow, but no CI/CD pipeline |
+| Dimension | Score (1-10) | Rev 2 | Rev 1 | Notes |
+|-----------|:---:|:---:|:---:|-------|
+| **Architecture** | 8 | 8 | 8 | Clean monorepo, schema-first DB, proper layering (minus service layer) |
+| **Code Quality** | 8.5 | 8 | 8 | Readable, consistent patterns, Java records, modern Angular, type-safe projections |
+| **Testing** | 7 | 7 | 3 | 42 backend integration tests covering all controllers, edge cases, business rules |
+| **API Design** | 9 | 9 | 9 | RESTful, paginated, searchable, documented, structured error responses, transactional writes |
+| **Frontend** | 8.5 | 8 | 8 | Modern Angular 21, Material UI, reactive patterns, error interceptor, unsaved-changes guard |
+| **Database** | 9 | 9 | 9 | Well-indexed, constrained, cascade deletes, schema-first |
+| **DevOps/Tooling** | 9 | 8 | 7 | CI pipeline, ESLint + Prettier, gitflow, Spring profiles, test isolation |
 
-**Overall: 7.4 / 10**
+**Overall: 8.4 / 10** (up from 8.1 → 7.4)
 
 ---
 
 ## Final Notes
 
-This candidate clearly understands full-stack development and makes pragmatic architectural decisions. The code is clean and follows modern conventions for both Angular and Spring Boot. The main area for growth is testing — adding test coverage would elevate this submission significantly. The lack of a service layer is a minor concern that's forgivable in a POC but would be expected in a production codebase.
+This submission has continued to mature since the second review. Five of the six previously-flagged weaknesses have been resolved — the only remaining structural concern is the lack of a service layer, which is a reasonable trade-off for a POC of this size.
 
-The candidate demonstrates they can ship a working product end-to-end, which is often more valuable than theoretical perfection.
+The codebase now demonstrates:
+
+- **Defensive coding**: Validation at DTO, entity, and database layers; structured error responses; max-3-score enforcement; transaction safety
+- **Testing discipline**: 42 backend tests covering happy paths, error cases, edge cases, and business rules
+- **Environment awareness**: Spring profiles for dev/test, Angular environment configs for dev/prod
+- **Production hygiene**: No SQL logging by default, no stack traces in error responses, separate test database, logging in exception handlers
+- **UX polish**: Unsaved-changes guard, centralized error notifications, responsive dashboard, debounced search
+- **CI/CD readiness**: GitHub Actions pipeline with lint, type-check, build, and test stages
+
+The remaining suggestions (service layer extraction, frontend tests, cosmetic fixes) are either low-priority or beyond typical POC scope. The candidate consistently demonstrates the ability to ship a working product end-to-end, respond to feedback systematically, and make pragmatic engineering decisions — all strong signals for a team environment.

@@ -1,20 +1,13 @@
 import { Routes } from '@angular/router';
-import { DashboardComponent } from './pages/dashboard/dashboard';
-import { StudentListComponent } from './pages/students/student-list';
-import { StudentDetailComponent } from './pages/students/student-detail';
-import { CourseListComponent } from './pages/courses/course-list';
-import { ExamResultListComponent } from './pages/exam-results/exam-result-list';
-import { ExamResultAddComponent } from './pages/exam-results/exam-result-add';
-import { ExamResultDetailComponent } from './pages/exam-results/exam-result-detail';
 import { unsavedChangesGuard } from './guards/unsaved-changes.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'students', component: StudentListComponent },
-  { path: 'students/:id', component: StudentDetailComponent },
-  { path: 'courses', component: CourseListComponent },
-  { path: 'exam-results', component: ExamResultListComponent },
-  { path: 'exam-results/add', component: ExamResultAddComponent },
-  { path: 'exam-results/add/:studentId', component: ExamResultDetailComponent, canDeactivate: [unsavedChangesGuard] },
+  { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard').then(m => m.DashboardComponent) },
+  { path: 'students', loadComponent: () => import('./pages/students/student-list').then(m => m.StudentListComponent) },
+  { path: 'students/:id', loadComponent: () => import('./pages/students/student-detail').then(m => m.StudentDetailComponent) },
+  { path: 'courses', loadComponent: () => import('./pages/courses/course-list').then(m => m.CourseListComponent) },
+  { path: 'exam-results', loadComponent: () => import('./pages/exam-results/exam-result-list').then(m => m.ExamResultListComponent) },
+  { path: 'exam-results/add', loadComponent: () => import('./pages/exam-results/exam-result-add').then(m => m.ExamResultAddComponent) },
+  { path: 'exam-results/add/:studentId', loadComponent: () => import('./pages/exam-results/exam-result-detail').then(m => m.ExamResultDetailComponent), canDeactivate: [unsavedChangesGuard] },
 ];
