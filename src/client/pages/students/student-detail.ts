@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -6,20 +7,27 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatTableModule } from '@angular/material/table';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { StudentService } from '../../services/student.service';
+import { ExamResultService } from '../../services/exam-result.service';
 import { Student } from '../../models/student.model';
+import { CourseScores } from '../../models/exam-result.model';
 
 @Component({
   selector: 'app-student-detail',
   imports: [
     RouterLink,
     FormsModule,
+    DecimalPipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    MatTableModule,
+    MatChipsModule,
     MatSnackBarModule,
   ],
   template: `
@@ -69,6 +77,50 @@ import { Student } from '../../models/student.model';
           }
         </mat-card-actions>
       </mat-card>
+
+      @if (examRows.length) {
+        <div class="section-header">
+          <h3>Exam Results</h3>
+          <button mat-flat-button [routerLink]="['/exam-results/add', student.id]">
+            <mat-icon>edit</mat-icon> Edit Scores
+          </button>
+        </div>
+        <table mat-table [dataSource]="examRows" class="mat-elevation-z1">
+          <ng-container matColumnDef="courseName">
+            <th mat-header-cell *matHeaderCellDef>Course</th>
+            <td mat-cell *matCellDef="let r">{{ r.courseName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="score1">
+            <th mat-header-cell *matHeaderCellDef>Score 1</th>
+            <td mat-cell *matCellDef="let r">{{ r.scores[0] ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="score2">
+            <th mat-header-cell *matHeaderCellDef>Score 2</th>
+            <td mat-cell *matCellDef="let r">{{ r.scores[1] ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="score3">
+            <th mat-header-cell *matHeaderCellDef>Score 3</th>
+            <td mat-cell *matCellDef="let r">{{ r.scores[2] ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="average">
+            <th mat-header-cell *matHeaderCellDef>Average</th>
+            <td mat-cell *matCellDef="let r">
+              @if (r.average !== null) {
+                <mat-chip [highlighted]="true">{{ r.average | number:'1.0-1' }}</mat-chip>
+              } @else {
+                <span class="muted">—</span>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="examColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: examColumns"></tr>
+        </table>
+      }
     }
   `,
   styles: `
@@ -86,18 +138,37 @@ import { Student } from '../../models/student.model';
     .detail-row {
       padding: 0.5rem 0;
     }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    .section-header h3 {
+      margin: 0;
+    }
+    table {
+      width: 100%;
+    }
+    .muted {
+      color: #999;
+    }
   `,
 })
 export class StudentDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private studentService = inject(StudentService);
+  private examResultService = inject(ExamResultService);
   private snackBar = inject(MatSnackBar);
   private cdr = inject(ChangeDetectorRef);
 
   student: Student | null = null;
   draft!: Student;
   editing = false;
+  examRows: { courseName: string; scores: (number | null)[]; average: number | null }[] = [];
+  examColumns = ['courseName', 'score1', 'score2', 'score3', 'average'];
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -111,6 +182,19 @@ export class StudentDetailComponent implements OnInit {
         this.router.navigate(['/students']);
       },
     });
+    this.examResultService.getStudentScores(id).subscribe({
+      next: (data) => {
+        this.examRows = data.courses.map((c) => this.mapCourseRow(c));
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private mapCourseRow(c: CourseScores) {
+    const scores = c.scores.map((s) => s.score);
+    const valid = scores.filter((s): s is number => s !== null);
+    const average = valid.length === 3 ? Math.round((valid.reduce((a, b) => a + b, 0) / 3) * 10) / 10 : null;
+    return { courseName: c.courseName, scores, average };
   }
 
   startEdit() {

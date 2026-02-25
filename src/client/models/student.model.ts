@@ -4,4 +4,5 @@ export interface Student {
   number: number;
   email: string;
   gsmNumber?: string;
+  completedCourses?: { courseName: string; average: number }[];
 }

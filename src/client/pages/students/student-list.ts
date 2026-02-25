@@ -1,4 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { MatChipsModule } from '@angular/material/chips';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -27,6 +29,8 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
     MatInputModule,
     MatDialogModule,
     MatSnackBarModule,
+    MatChipsModule,
+    DecimalPipe,
   ],
   template: `
     <div class="page-header">
@@ -66,6 +70,23 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
       <ng-container matColumnDef="gsmNumber">
         <th mat-header-cell *matHeaderCellDef>Phone</th>
         <td mat-cell *matCellDef="let s">{{ s.gsmNumber }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="completedCourses">
+        <th mat-header-cell *matHeaderCellDef>Completed Courses</th>
+        <td mat-cell *matCellDef="let s">
+          @if (s.completedCourses?.length) {
+            <mat-chip-set>
+              @for (cc of s.completedCourses; track cc.courseName) {
+                <mat-chip [highlighted]="true">
+                  {{ cc.courseName }}: {{ cc.average | number:'1.0-0' }}
+                </mat-chip>
+              }
+            </mat-chip-set>
+          } @else {
+            <span class="muted">&mdash;</span>
+          }
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
@@ -115,6 +136,9 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
         text-decoration: underline;
       }
     }
+    .muted {
+      color: #999;
+    }
   `,
 })
 export class StudentListComponent implements OnInit {
@@ -124,7 +148,7 @@ export class StudentListComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   dataSource = new MatTableDataSource<Student>();
-  displayedColumns = ['number', 'fullName', 'email', 'gsmNumber', 'actions'];
+  displayedColumns = ['number', 'fullName', 'email', 'gsmNumber', 'completedCourses', 'actions'];
   searchTerm = '';
   totalElements = 0;
   pageSize = 10;

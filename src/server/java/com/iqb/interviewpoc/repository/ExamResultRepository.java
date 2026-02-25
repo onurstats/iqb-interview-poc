@@ -30,8 +30,21 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, Long> {
            "ORDER BY er.created_at DESC LIMIT 5", nativeQuery = true)
     List<RecentResultProjection> findRecentResults();
 
-    @Query("SELECT er.score FROM ExamResult er")
-    List<Integer> findAllScores();
+    @Query(value = "SELECT " +
+           "SUM(CASE WHEN score <= 20 THEN 1 ELSE 0 END) as range0to20, " +
+           "SUM(CASE WHEN score > 20 AND score <= 40 THEN 1 ELSE 0 END) as range21to40, " +
+           "SUM(CASE WHEN score > 40 AND score <= 60 THEN 1 ELSE 0 END) as range41to60, " +
+           "SUM(CASE WHEN score > 60 AND score <= 80 THEN 1 ELSE 0 END) as range61to80, " +
+           "SUM(CASE WHEN score > 80 THEN 1 ELSE 0 END) as range81to100 " +
+           "FROM exam_result", nativeQuery = true)
+    ScoreDistributionProjection findScoreDistribution();
+
+    @Query(value = "SELECT er.student_id as studentId, c.name as courseName, AVG(er.score) as average " +
+           "FROM exam_result er JOIN course c ON er.course_id = c.id " +
+           "WHERE er.student_id IN (:studentIds) " +
+           "GROUP BY er.student_id, er.course_id, c.name " +
+           "HAVING COUNT(*) = 3", nativeQuery = true)
+    List<CompletedCourseProjection> findCompletedCourseAverages(@Param("studentIds") List<Long> studentIds);
 
     long countByStudentIdAndCourseId(Long studentId, Long courseId);
 
